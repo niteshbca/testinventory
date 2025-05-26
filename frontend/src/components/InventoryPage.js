@@ -12,7 +12,7 @@ const InventoryPage = () => {
   // Fetch data from backend (MongoDB) and filter by godown name
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/delevery1") // Updated endpoint
+      .get("http://13.235.75.71:5000/api/delevery1") // Updated endpoint
       .then((response) => {
         console.log("API Response: ", response.data); // Debugging: Check API response
         
