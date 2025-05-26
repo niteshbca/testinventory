@@ -19,7 +19,7 @@ const Dsale = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/products3")
+      .get("http://13.235.75.71:5000/api/products3")
       .then((response) => {
         const uniqueOptions = Array.from(
           new Set(response.data.map((item) => item.selectedOption))
@@ -50,7 +50,7 @@ const Dsale = () => {
     }
 
     axios
-      .post("http://localhost:5000/api/save/delevery1", {
+      .post("http://13.235.75.71:5000/api/save/delevery1", {
         selectedOption: selectedValue,
         inputValue: inputValue,
         username: username,
@@ -84,7 +84,7 @@ const Dsale = () => {
     setIsStarted(true);
 
     axios
-      .post("http://localhost:5000/api/save/delevery1", {
+      .post("http://13.235.75.71:5000/api/save/delevery1", {
         selectedOption: selectedValue,
         inputValue: inputValue,
         username: username,
