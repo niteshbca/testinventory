@@ -5,7 +5,7 @@ const BarcodeTable = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/barcodes")
+    fetch("http://13.235.75.71:5000/api/barcodes")
       .then((res) => res.json())
       .then((data) => setBarcodes(data))
       .catch((err) => console.error("Error fetching barcodes:", err));
