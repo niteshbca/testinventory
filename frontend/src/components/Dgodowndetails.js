@@ -18,7 +18,7 @@ function Dgodowndetails() {
   // Fetch data from backend (MongoDB) and filter by godown name
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/despatch")
+      .get("http://13.235.75.71:5000/api/despatch")
       .then((response) => {
         console.log("API Response: ", response.data); // Debugging: Check API response
         
@@ -56,7 +56,7 @@ function Dgodowndetails() {
 
 
   useEffect(() => {
-    axios.get("http://localhost:5000/api/products1")
+    axios.get("http://13.235.75.71:5000/api/products1")
       .then(response => {
         const uniqueOptions = Array.from(new Set(response.data.map(item => item.selectedOption)));
         setOptions(uniqueOptions);
@@ -70,7 +70,7 @@ function Dgodowndetails() {
       return;
     }
   
-    axios.post("http://localhost:5000/api/save/select", {
+    axios.post("http://13.235.75.71:5000/api/save/select", {
       selectedOption: selectedValue,
       inputValue: inputValue,
       godownName: godown.name, // Godown name add kiya
@@ -93,7 +93,7 @@ function Dgodowndetails() {
     setIsSaving(true);
     setIsStarted(true);
   
-    axios.post("http://localhost:5000/api/save/select", {
+    axios.post("http://13.235.75.71:5000/api/save/select", {
       selectedOption: selectedValue,
       inputValue: inputValue,
       godownName: godown.name, // Godown name add kiya
@@ -110,7 +110,7 @@ function Dgodowndetails() {
   useEffect(() => {
     if (isStarted && inputValue && selectedValue) {
       const timer = setTimeout(() => {
-        axios.post("http://localhost:5000/api/save/select", {
+        axios.post("http://13.235.75.71:5000/api/save/select", {
           selectedOption: selectedValue,
           inputValue: inputValue,
           godownName: godown.name,
