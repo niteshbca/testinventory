@@ -11,7 +11,7 @@ const SelectForm = () => {
   // Fetch unique values from the database when component mounts
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/products")
+      .get("http://13.235.75.71:5000/api/products")
       .then((response) => {
         setOptions(response.data);
       })
@@ -31,7 +31,7 @@ const SelectForm = () => {
 
     // Save data to the database
     axios
-      .post("http://localhost:5000/api/save", {
+      .post("http://13.235.75.71:5000/api/save", {
         selectedOption: selectedValue,
         inputValue: inputValue,
       })
@@ -49,7 +49,7 @@ const SelectForm = () => {
     if (isStarted && inputValue && selectedValue) {
       const timer = setTimeout(() => {
         axios
-          .post("http://localhost:5000/api/save", {
+          .post("http://13.235.75.71:5000/api/save", {
             selectedOption: selectedValue,
             inputValue: inputValue,
           })
