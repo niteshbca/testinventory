@@ -1,0 +1,73 @@
+.customers-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.customers-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    
+    /* --- Styles for Sticky Header --- */
+    position: sticky;
+    top: 80px; /* Height of the main navbar */
+    z-index: 900; /* Below main navbar, but above other content */
+    
+    /* Background to hide content scrolling underneath */
+    background: rgba(28, 37, 65, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 10px;
+}
+
+.customers-header h3 {
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    font-size: 2rem;
+}
+
+.customer-card {
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.customer-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.customer-card h3 a {
+    color: #fcb900;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.customer-card p {
+    color: #f1f1f1;
+    margin: 5px 0;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .customers-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .customers-header .btn {
+        width: 100%;
+        margin-top: 10px;
+    }
+} 
