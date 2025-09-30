@@ -569,12 +569,12 @@ apiRouter.get('/selects', async (req, res) => {
   }
 });
 
-// Mount API router with /api prefix
-app.use('/api', apiRouter);
+// Mount API router directly at root (base URL already has /api)
+app.use('/', apiRouter);
 
 // Mount additional route files
-app.use('/api', excelRoutes);
-app.use('/api', billingRoutes);
+app.use('/', excelRoutes);
+app.use('/', billingRoutes);
 
 // Health check endpoint
 app.get('/', (req, res) => {
