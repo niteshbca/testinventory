@@ -335,7 +335,7 @@ app.get('/api/sales', async (req, res) => {
 });
 
 // Authentication
-app.post('/api/auth/signup', async (req, res) => {
+app.post('/auth/signup', async (req, res) => {
   const { username, email, password } = req.body;
   try {
     const existingUser = await User.findOne({ email });
@@ -403,7 +403,7 @@ app.post('/api/godown-login', async (req, res) => {
 });
 
 // Users
-app.get('/api/users', async (req, res) => {
+app.get('/users', async (req, res) => {
   try {
     const users = await User.find();
     res.json(users);
@@ -412,7 +412,7 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-app.delete('/api/users/:id', async (req, res) => {
+app.delete('/users/:id', async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
