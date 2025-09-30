@@ -7,7 +7,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 const Godown = require('./models/Godowns');
 const GodownInventory = require('./models/GodownInventory');
@@ -110,25 +110,31 @@ const dsaleSchema = new mongoose.Schema({
 const Dsale = mongoose.model("Dsale", dsaleSchema, "dsale");
 
 // ============================================
-// ALL ROUTES START HERE
-// Base URL: https://inventory.works/api/
-// So routes are defined without /api prefix
+// ALL ROUTES WITH /api PREFIX
+// Frontend calls: https://inventory.works/api/...
+// Backend routes: /api/...
 // ============================================
 
-// Health check
+// Root health check
 app.get('/', (req, res) => {
   res.json({ 
     message: 'Inventory Management API', 
-    status: 'running',
-    baseURL: 'https://inventory.works/api/'
+    status: 'running'
   });
 });
 
-// Admin Login Route - IMPORTANT: This must be BEFORE other routes
-app.post('/loginadmin', (req, res) => {
+// API health check
+app.get('/api', (req, res) => {
+  res.json({ 
+    message: 'API is working', 
+    status: 'ok'
+  });
+});
+
+// Admin Login
+app.post('/api/loginadmin', (req, res) => {
   console.log('=== Admin Login Request ===');
   console.log('Body:', req.body);
-  console.log('ENV Username:', process.env.ADMIN_USERNAME);
   
   const { username, password } = req.body;
   
@@ -144,7 +150,7 @@ app.post('/loginadmin', (req, res) => {
 });
 
 // Selects
-app.get('/selects', async (req, res) => {
+app.get('/api/selects', async (req, res) => {
   try {
     const data = await Select.find();
     res.json(data);
@@ -154,7 +160,7 @@ app.get('/selects', async (req, res) => {
 });
 
 // Barcodes
-app.get("/barcodes", async (req, res) => {
+app.get("/api/barcodes", async (req, res) => {
   try {
     const barcodes = await Barcode.find();
     res.json(barcodes);
@@ -163,7 +169,7 @@ app.get("/barcodes", async (req, res) => {
   }
 });
 
-app.post("/saved", async (req, res) => {
+app.post("/api/saved", async (req, res) => {
   try {
     const newBarcode = new Barcode(req.body);
     await newBarcode.save();
@@ -173,8 +179,8 @@ app.post("/saved", async (req, res) => {
   }
 });
 
-// Godown
-app.get('/godowns', async (req, res) => {
+// Godowns
+app.get('/api/godowns', async (req, res) => {
   try {
     const godowns = await Godown.find();
     res.json(godowns);
@@ -183,7 +189,7 @@ app.get('/godowns', async (req, res) => {
   }
 });
 
-app.post('/godowns', async (req, res) => {
+app.post('/api/godowns', async (req, res) => {
   try {
     const { name, address, email, password, city, state } = req.body;
     const godown = new Godown({ name, address, email, password, city, state });
@@ -197,7 +203,7 @@ app.post('/godowns', async (req, res) => {
   }
 });
 
-app.put('/godowns/:id', async (req, res) => {
+app.put('/api/godowns/:id', async (req, res) => {
   try {
     const { name, address, email, password, city, state } = req.body;
     const updatedGodown = await Godown.findByIdAndUpdate(
@@ -215,7 +221,7 @@ app.put('/godowns/:id', async (req, res) => {
   }
 });
 
-app.delete('/godowns/:id', async (req, res) => {
+app.delete('/api/godowns/:id', async (req, res) => {
   try {
     const godown = await Godown.findByIdAndDelete(req.params.id);
     if (!godown) return res.status(404).json({ message: 'Godown not found' });
@@ -226,7 +232,7 @@ app.delete('/godowns/:id', async (req, res) => {
 });
 
 // Items
-app.get('/items/:godownId', async (req, res) => {
+app.get('/api/items/:godownId', async (req, res) => {
   try {
     const items = await Item.find({ godownId: req.params.godownId });
     res.json(items);
@@ -235,7 +241,7 @@ app.get('/items/:godownId', async (req, res) => {
   }
 });
 
-app.post('/items', async (req, res) => {
+app.post('/api/items', async (req, res) => {
   try {
     const { godownId, name } = req.body;
     const item = new Item({ godownId, name });
@@ -247,7 +253,7 @@ app.post('/items', async (req, res) => {
 });
 
 // Delivery Items
-app.post('/checkAndAddItem', async (req, res) => {
+app.post('/api/checkAndAddItem', async (req, res) => {
   const { input, godownName } = req.body;
   try {
     const item = await Item.findOne({ name: input });
@@ -264,7 +270,7 @@ app.post('/checkAndAddItem', async (req, res) => {
   }
 });
 
-app.get('/getDeliveryItems', async (req, res) => {
+app.get('/api/getDeliveryItems', async (req, res) => {
   const godownName = req.query.godown;
   if (!godownName) {
     return res.status(400).json({ success: false, message: 'Godown name is required.' });
@@ -281,7 +287,7 @@ app.get('/getDeliveryItems', async (req, res) => {
   }
 });
 
-app.get('/deliveryItems', async (req, res) => {
+app.get('/api/deliveryItems', async (req, res) => {
   try {
     const items = await DeliveryItem.find();
     res.status(200).json(items);
@@ -290,7 +296,7 @@ app.get('/deliveryItems', async (req, res) => {
   }
 });
 
-app.delete('/deliveryItems/:id', async (req, res) => {
+app.delete('/api/deliveryItems/:id', async (req, res) => {
   const { id } = req.params;
   try {
     await DeliveryItem.findByIdAndDelete(id);
@@ -301,7 +307,7 @@ app.delete('/deliveryItems/:id', async (req, res) => {
 });
 
 // Sales
-app.post('/sales', async (req, res) => {
+app.post('/api/sales', async (req, res) => {
   const { name, userName, mobileNumber, godown } = req.body;
   try {
     const matchingItem = await DeliveryItem.findOne({ name: name.trim() });
@@ -317,7 +323,7 @@ app.post('/sales', async (req, res) => {
   }
 });
 
-app.get('/sales', async (req, res) => {
+app.get('/api/sales', async (req, res) => {
   try {
     const salesData = await Sale.aggregate([
       { $group: { _id: "$godown", sales: { $push: "$$ROOT" } } }
@@ -329,7 +335,7 @@ app.get('/sales', async (req, res) => {
 });
 
 // Authentication
-app.post('/auth/signup', async (req, res) => {
+app.post('/api/auth/signup', async (req, res) => {
   const { username, email, password } = req.body;
   try {
     const existingUser = await User.findOne({ email });
@@ -343,7 +349,7 @@ app.post('/auth/signup', async (req, res) => {
   }
 });
 
-app.post('/auth/login', async (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email });
@@ -357,7 +363,7 @@ app.post('/auth/login', async (req, res) => {
   }
 });
 
-app.post('/login', async (req, res) => {
+app.post('/api/login', async (req, res) => {
   const { name, address } = req.body;
   try {
     const godown = await Godown.findOne({ name, address });
@@ -371,7 +377,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-app.post('/godown-login', async (req, res) => {
+app.post('/api/godown-login', async (req, res) => {
   const { email, password } = req.body;
   try {
     const godown = await Godown.findOne({ email, password });
@@ -397,7 +403,7 @@ app.post('/godown-login', async (req, res) => {
 });
 
 // Users
-app.get('/users', async (req, res) => {
+app.get('/api/users', async (req, res) => {
   try {
     const users = await User.find();
     res.json(users);
@@ -406,7 +412,7 @@ app.get('/users', async (req, res) => {
   }
 });
 
-app.delete('/users/:id', async (req, res) => {
+app.delete('/api/users/:id', async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
@@ -419,7 +425,7 @@ app.delete('/users/:id', async (req, res) => {
 });
 
 // Products
-app.get("/products", async (req, res) => {
+app.get("/api/products", async (req, res) => {
   try {
     const products = await Barcode.distinct("product");
     res.json(products);
@@ -428,7 +434,7 @@ app.get("/products", async (req, res) => {
   }
 });
 
-app.get("/products1", async (req, res) => {
+app.get("/api/products1", async (req, res) => {
   try {
     const products = await Select.find();
     res.json(products);
@@ -437,7 +443,7 @@ app.get("/products1", async (req, res) => {
   }
 });
 
-app.get("/products2", async (req, res) => {
+app.get("/api/products2", async (req, res) => {
   try {
     const products = await Despatch.find();
     res.json(products);
@@ -446,7 +452,7 @@ app.get("/products2", async (req, res) => {
   }
 });
 
-app.get("/products3", async (req, res) => {
+app.get("/api/products3", async (req, res) => {
   try {
     const products = await Delevery1.find();
     res.json(products);
@@ -456,7 +462,7 @@ app.get("/products3", async (req, res) => {
 });
 
 // Save Operations
-app.post("/save", async (req, res) => {
+app.post("/api/save", async (req, res) => {
   try {
     const { inputValue } = req.body;
     if (!inputValue) {
@@ -470,7 +476,7 @@ app.post("/save", async (req, res) => {
   }
 });
 
-app.post("/save-input", async (req, res) => {
+app.post("/api/save-input", async (req, res) => {
   try {
     const { inputValue } = req.body;
     if (!inputValue) {
@@ -484,7 +490,7 @@ app.post("/save-input", async (req, res) => {
   }
 });
 
-app.post("/save-multiple", async (req, res) => {
+app.post("/api/save-multiple", async (req, res) => {
   try {
     const { selectedOption, values } = req.body;
     if (!selectedOption || !Array.isArray(values) || values.length === 0) {
@@ -498,7 +504,7 @@ app.post("/save-multiple", async (req, res) => {
   }
 });
 
-app.post("/save/select", async (req, res) => {
+app.post("/api/save/select", async (req, res) => {
   const { inputValue, godownName } = req.body;
   try {
     const existingData = await Select.findOne({ inputValue });
@@ -514,7 +520,7 @@ app.post("/save/select", async (req, res) => {
   }
 });
 
-app.post("/save/despatch", async (req, res) => {
+app.post("/api/save/despatch", async (req, res) => {
   const { selectedOption, inputValue, godownName } = req.body;
   try {
     const existingData = await Despatch.findOne({ selectedOption, inputValue });
@@ -530,7 +536,7 @@ app.post("/save/despatch", async (req, res) => {
   }
 });
 
-app.post("/save/delevery1", async (req, res) => {
+app.post("/api/save/delevery1", async (req, res) => {
   const { selectedOption, inputValue, godownName, username, mobileNumber } = req.body;
   try {
     const existingData = await Delevery1.findOne({ selectedOption, inputValue });
@@ -546,7 +552,7 @@ app.post("/save/delevery1", async (req, res) => {
   }
 });
 
-app.post("/add/delevery1", async (req, res) => {
+app.post("/api/add/delevery1", async (req, res) => {
   const { selectedOption, inputValue, godownName, username, mobileNumber } = req.body;
   try {
     const newDelevery1 = new Delevery1({ selectedOption, inputValue, godownName, username, mobileNumber });
@@ -558,7 +564,7 @@ app.post("/add/delevery1", async (req, res) => {
 });
 
 // Despatch & Delivery
-app.get('/despatch', async (req, res) => {
+app.get('/api/despatch', async (req, res) => {
   try {
     const data = await Despatch.find({});
     res.json(data);
@@ -568,7 +574,7 @@ app.get('/despatch', async (req, res) => {
   }
 });
 
-app.get("/delevery1", async (req, res) => {
+app.get("/api/delevery1", async (req, res) => {
   try {
     const data = await Delevery1.find();
     res.json(data);
@@ -579,7 +585,7 @@ app.get("/delevery1", async (req, res) => {
 });
 
 // Data
-app.get('/data', async (req, res) => {
+app.get('/api/data', async (req, res) => {
   try {
     const data = await Dsale.find();
     res.json(data);
@@ -588,9 +594,9 @@ app.get('/data', async (req, res) => {
   }
 });
 
-// Mount additional route files
-app.use('/', excelRoutes);
-app.use('/', billingRoutes);
+// Mount additional route files with /api prefix
+app.use('/api', excelRoutes);
+app.use('/api', billingRoutes);
 
 // 404 handler - at the end
 app.use((req, res) => {
@@ -605,8 +611,5 @@ app.use((req, res) => {
 // Start Server
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
-  console.log('Available routes:');
-  console.log('POST /loginadmin');
-  console.log('GET  /selects');
-  console.log('And all other routes...');
+  console.log('All routes available with /api prefix');
 });
