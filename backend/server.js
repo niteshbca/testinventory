@@ -14,9 +14,10 @@ const GodownInventory = require('./models/GodownInventory');
 const excelRoutes = require('./routes/excelRoutes');
 const billingRoutes = require('./routes/billingRoutes');
 
-// Middleware
-app.use(bodyParser.json());
+// Middleware - MUST be before routes
 app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/inventory')
@@ -108,15 +109,52 @@ const dsaleSchema = new mongoose.Schema({
 });
 const Dsale = mongoose.model("Dsale", dsaleSchema, "dsale");
 
-// Create API Router
-const apiRouter = express.Router();
+// ============================================
+// ALL ROUTES START HERE
+// Base URL: https://inventory.works/api/
+// So routes are defined without /api prefix
+// ============================================
 
-// ============================================
-// API Routes (under /api prefix)
-// ============================================
+// Health check
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Inventory Management API', 
+    status: 'running',
+    baseURL: 'https://inventory.works/api/'
+  });
+});
+
+// Admin Login Route - IMPORTANT: This must be BEFORE other routes
+app.post('/loginadmin', (req, res) => {
+  console.log('=== Admin Login Request ===');
+  console.log('Body:', req.body);
+  console.log('ENV Username:', process.env.ADMIN_USERNAME);
+  
+  const { username, password } = req.body;
+  
+  if (!username || !password) {
+    return res.status(400).json({ success: false, message: 'Username and password required' });
+  }
+  
+  if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+    return res.json({ success: true, message: 'Login successful' });
+  }
+  
+  return res.json({ success: false, message: 'Invalid credentials' });
+});
+
+// Selects
+app.get('/selects', async (req, res) => {
+  try {
+    const data = await Select.find();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "Error fetching data" });
+  }
+});
 
 // Barcodes
-apiRouter.get("/barcodes", async (req, res) => {
+app.get("/barcodes", async (req, res) => {
   try {
     const barcodes = await Barcode.find();
     res.json(barcodes);
@@ -125,7 +163,7 @@ apiRouter.get("/barcodes", async (req, res) => {
   }
 });
 
-apiRouter.post("/saved", async (req, res) => {
+app.post("/saved", async (req, res) => {
   try {
     const newBarcode = new Barcode(req.body);
     await newBarcode.save();
@@ -136,7 +174,7 @@ apiRouter.post("/saved", async (req, res) => {
 });
 
 // Godown
-apiRouter.get('/godowns', async (req, res) => {
+app.get('/godowns', async (req, res) => {
   try {
     const godowns = await Godown.find();
     res.json(godowns);
@@ -145,7 +183,7 @@ apiRouter.get('/godowns', async (req, res) => {
   }
 });
 
-apiRouter.post('/godowns', async (req, res) => {
+app.post('/godowns', async (req, res) => {
   try {
     const { name, address, email, password, city, state } = req.body;
     const godown = new Godown({ name, address, email, password, city, state });
@@ -159,7 +197,7 @@ apiRouter.post('/godowns', async (req, res) => {
   }
 });
 
-apiRouter.put('/godowns/:id', async (req, res) => {
+app.put('/godowns/:id', async (req, res) => {
   try {
     const { name, address, email, password, city, state } = req.body;
     const updatedGodown = await Godown.findByIdAndUpdate(
@@ -177,7 +215,7 @@ apiRouter.put('/godowns/:id', async (req, res) => {
   }
 });
 
-apiRouter.delete('/godowns/:id', async (req, res) => {
+app.delete('/godowns/:id', async (req, res) => {
   try {
     const godown = await Godown.findByIdAndDelete(req.params.id);
     if (!godown) return res.status(404).json({ message: 'Godown not found' });
@@ -188,7 +226,7 @@ apiRouter.delete('/godowns/:id', async (req, res) => {
 });
 
 // Items
-apiRouter.get('/items/:godownId', async (req, res) => {
+app.get('/items/:godownId', async (req, res) => {
   try {
     const items = await Item.find({ godownId: req.params.godownId });
     res.json(items);
@@ -197,7 +235,7 @@ apiRouter.get('/items/:godownId', async (req, res) => {
   }
 });
 
-apiRouter.post('/items', async (req, res) => {
+app.post('/items', async (req, res) => {
   try {
     const { godownId, name } = req.body;
     const item = new Item({ godownId, name });
@@ -209,7 +247,7 @@ apiRouter.post('/items', async (req, res) => {
 });
 
 // Delivery Items
-apiRouter.post('/checkAndAddItem', async (req, res) => {
+app.post('/checkAndAddItem', async (req, res) => {
   const { input, godownName } = req.body;
   try {
     const item = await Item.findOne({ name: input });
@@ -226,7 +264,7 @@ apiRouter.post('/checkAndAddItem', async (req, res) => {
   }
 });
 
-apiRouter.get('/getDeliveryItems', async (req, res) => {
+app.get('/getDeliveryItems', async (req, res) => {
   const godownName = req.query.godown;
   if (!godownName) {
     return res.status(400).json({ success: false, message: 'Godown name is required.' });
@@ -243,7 +281,7 @@ apiRouter.get('/getDeliveryItems', async (req, res) => {
   }
 });
 
-apiRouter.get('/deliveryItems', async (req, res) => {
+app.get('/deliveryItems', async (req, res) => {
   try {
     const items = await DeliveryItem.find();
     res.status(200).json(items);
@@ -252,7 +290,7 @@ apiRouter.get('/deliveryItems', async (req, res) => {
   }
 });
 
-apiRouter.delete('/deliveryItems/:id', async (req, res) => {
+app.delete('/deliveryItems/:id', async (req, res) => {
   const { id } = req.params;
   try {
     await DeliveryItem.findByIdAndDelete(id);
@@ -263,7 +301,7 @@ apiRouter.delete('/deliveryItems/:id', async (req, res) => {
 });
 
 // Sales
-apiRouter.post('/sales', async (req, res) => {
+app.post('/sales', async (req, res) => {
   const { name, userName, mobileNumber, godown } = req.body;
   try {
     const matchingItem = await DeliveryItem.findOne({ name: name.trim() });
@@ -279,7 +317,7 @@ apiRouter.post('/sales', async (req, res) => {
   }
 });
 
-apiRouter.get('/sales', async (req, res) => {
+app.get('/sales', async (req, res) => {
   try {
     const salesData = await Sale.aggregate([
       { $group: { _id: "$godown", sales: { $push: "$$ROOT" } } }
@@ -291,7 +329,7 @@ apiRouter.get('/sales', async (req, res) => {
 });
 
 // Authentication
-apiRouter.post('/auth/signup', async (req, res) => {
+app.post('/auth/signup', async (req, res) => {
   const { username, email, password } = req.body;
   try {
     const existingUser = await User.findOne({ email });
@@ -305,7 +343,7 @@ apiRouter.post('/auth/signup', async (req, res) => {
   }
 });
 
-apiRouter.post('/auth/login', async (req, res) => {
+app.post('/auth/login', async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email });
@@ -319,7 +357,7 @@ apiRouter.post('/auth/login', async (req, res) => {
   }
 });
 
-apiRouter.post('/login', async (req, res) => {
+app.post('/login', async (req, res) => {
   const { name, address } = req.body;
   try {
     const godown = await Godown.findOne({ name, address });
@@ -333,7 +371,7 @@ apiRouter.post('/login', async (req, res) => {
   }
 });
 
-apiRouter.post('/godown-login', async (req, res) => {
+app.post('/godown-login', async (req, res) => {
   const { email, password } = req.body;
   try {
     const godown = await Godown.findOne({ email, password });
@@ -359,7 +397,7 @@ apiRouter.post('/godown-login', async (req, res) => {
 });
 
 // Users
-apiRouter.get('/users', async (req, res) => {
+app.get('/users', async (req, res) => {
   try {
     const users = await User.find();
     res.json(users);
@@ -368,7 +406,7 @@ apiRouter.get('/users', async (req, res) => {
   }
 });
 
-apiRouter.delete('/users/:id', async (req, res) => {
+app.delete('/users/:id', async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
@@ -381,7 +419,7 @@ apiRouter.delete('/users/:id', async (req, res) => {
 });
 
 // Products
-apiRouter.get("/products", async (req, res) => {
+app.get("/products", async (req, res) => {
   try {
     const products = await Barcode.distinct("product");
     res.json(products);
@@ -390,7 +428,7 @@ apiRouter.get("/products", async (req, res) => {
   }
 });
 
-apiRouter.get("/products1", async (req, res) => {
+app.get("/products1", async (req, res) => {
   try {
     const products = await Select.find();
     res.json(products);
@@ -399,7 +437,7 @@ apiRouter.get("/products1", async (req, res) => {
   }
 });
 
-apiRouter.get("/products2", async (req, res) => {
+app.get("/products2", async (req, res) => {
   try {
     const products = await Despatch.find();
     res.json(products);
@@ -408,7 +446,7 @@ apiRouter.get("/products2", async (req, res) => {
   }
 });
 
-apiRouter.get("/products3", async (req, res) => {
+app.get("/products3", async (req, res) => {
   try {
     const products = await Delevery1.find();
     res.json(products);
@@ -418,7 +456,7 @@ apiRouter.get("/products3", async (req, res) => {
 });
 
 // Save Operations
-apiRouter.post("/save", async (req, res) => {
+app.post("/save", async (req, res) => {
   try {
     const { inputValue } = req.body;
     if (!inputValue) {
@@ -432,7 +470,7 @@ apiRouter.post("/save", async (req, res) => {
   }
 });
 
-apiRouter.post("/save-input", async (req, res) => {
+app.post("/save-input", async (req, res) => {
   try {
     const { inputValue } = req.body;
     if (!inputValue) {
@@ -446,7 +484,7 @@ apiRouter.post("/save-input", async (req, res) => {
   }
 });
 
-apiRouter.post("/save-multiple", async (req, res) => {
+app.post("/save-multiple", async (req, res) => {
   try {
     const { selectedOption, values } = req.body;
     if (!selectedOption || !Array.isArray(values) || values.length === 0) {
@@ -460,7 +498,7 @@ apiRouter.post("/save-multiple", async (req, res) => {
   }
 });
 
-apiRouter.post("/save/select", async (req, res) => {
+app.post("/save/select", async (req, res) => {
   const { inputValue, godownName } = req.body;
   try {
     const existingData = await Select.findOne({ inputValue });
@@ -476,7 +514,7 @@ apiRouter.post("/save/select", async (req, res) => {
   }
 });
 
-apiRouter.post("/save/despatch", async (req, res) => {
+app.post("/save/despatch", async (req, res) => {
   const { selectedOption, inputValue, godownName } = req.body;
   try {
     const existingData = await Despatch.findOne({ selectedOption, inputValue });
@@ -492,7 +530,7 @@ apiRouter.post("/save/despatch", async (req, res) => {
   }
 });
 
-apiRouter.post("/save/delevery1", async (req, res) => {
+app.post("/save/delevery1", async (req, res) => {
   const { selectedOption, inputValue, godownName, username, mobileNumber } = req.body;
   try {
     const existingData = await Delevery1.findOne({ selectedOption, inputValue });
@@ -508,7 +546,7 @@ apiRouter.post("/save/delevery1", async (req, res) => {
   }
 });
 
-apiRouter.post("/add/delevery1", async (req, res) => {
+app.post("/add/delevery1", async (req, res) => {
   const { selectedOption, inputValue, godownName, username, mobileNumber } = req.body;
   try {
     const newDelevery1 = new Delevery1({ selectedOption, inputValue, godownName, username, mobileNumber });
@@ -520,7 +558,7 @@ apiRouter.post("/add/delevery1", async (req, res) => {
 });
 
 // Despatch & Delivery
-apiRouter.get('/despatch', async (req, res) => {
+app.get('/despatch', async (req, res) => {
   try {
     const data = await Despatch.find({});
     res.json(data);
@@ -530,7 +568,7 @@ apiRouter.get('/despatch', async (req, res) => {
   }
 });
 
-apiRouter.get("/delevery1", async (req, res) => {
+app.get("/delevery1", async (req, res) => {
   try {
     const data = await Delevery1.find();
     res.json(data);
@@ -541,7 +579,7 @@ apiRouter.get("/delevery1", async (req, res) => {
 });
 
 // Data
-apiRouter.get('/data', async (req, res) => {
+app.get('/data', async (req, res) => {
   try {
     const data = await Dsale.find();
     res.json(data);
@@ -550,38 +588,25 @@ apiRouter.get('/data', async (req, res) => {
   }
 });
 
-// Admin Login (add to apiRouter)
-apiRouter.post('/loginadmin', (req, res) => {
-  const { username, password } = req.body;
-  if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
-    return res.json({ success: true });
-  }
-  return res.json({ success: false });
-});
-
-// Selects (add to apiRouter)
-apiRouter.get('/selects', async (req, res) => {
-  try {
-    const data = await Select.find();
-    res.json(data);
-  } catch (err) {
-    res.status(500).send("Error fetching data");
-  }
-});
-
-// Mount API router directly at root (base URL already has /api)
-app.use('/', apiRouter);
-
 // Mount additional route files
 app.use('/', excelRoutes);
 app.use('/', billingRoutes);
 
-// Health check endpoint
-app.get('/', (req, res) => {
-  res.json({ message: 'Inventory Management API', status: 'running' });
+// 404 handler - at the end
+app.use((req, res) => {
+  console.log('404 - Route not found:', req.method, req.path);
+  res.status(404).json({ 
+    error: 'Route not found',
+    path: req.path,
+    method: req.method
+  });
 });
 
 // Start Server
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
+  console.log('Available routes:');
+  console.log('POST /loginadmin');
+  console.log('GET  /selects');
+  console.log('And all other routes...');
 });
