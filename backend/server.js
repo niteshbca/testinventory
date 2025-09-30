@@ -49,20 +49,13 @@ const saleSchema = new mongoose.Schema({
   mobileNumber: { type: String, required: true },
   godown: { type: String, required: true },
 });
-
 const Sale = mongoose.model('Sale', saleSchema);
 
-
-// Schema for Select Collection
 const selectSchema = new mongoose.Schema({
   inputValue: String,
 });
-
 const Select = mongoose.model("Select", selectSchema);
 
-
-
-// Define Schema
 const barcodeSchema = new mongoose.Schema({
   product: String,
   packed: String,
@@ -79,41 +72,21 @@ const barcodeSchema = new mongoose.Schema({
   skun: String,
   batchNumbers: [Number],
 });
-
-// Create Model
 const Barcode = mongoose.model("Barcode", barcodeSchema);
-
-
-
-
-// Routes
-
-
-
 
 const despatchSchema = new mongoose.Schema({
   selectedOption: String,
   inputValue: String,
-  godownName: String, // Godown name add kiya
+  godownName: String,
   addedAt: { type: Date, default: Date.now },
 });
-
-
-
-const Despatch = mongoose.model("Despatch", despatchSchema, "despatch"); // `despatch` collection
-
-// Schema for Select Collection
-
-
-
-
+const Despatch = mongoose.model("Despatch", despatchSchema, "despatch");
 
 const delevery1Schema = new mongoose.Schema({
   selectedOption: String,
   inputValue: String,
   godownName: String,
   addedAt: { type: Date, default: Date.now },
-  // Additional fields for billing system integration
   itemName: String,
   quantity: { type: Number, default: 0 },
   price: { type: Number, default: 0 },
@@ -123,35 +96,27 @@ const delevery1Schema = new mongoose.Schema({
   godownId: { type: mongoose.Schema.Types.ObjectId, ref: 'Godown' },
   lastUpdated: { type: Date, default: Date.now }
 });
-
-
 const Delevery1 = mongoose.model("Delevery1", delevery1Schema, "delevery1");
-
-
-
 
 const dsaleSchema = new mongoose.Schema({
   selectedOption: String,
   inputValue: String,
   godownName: String,
-  username: String,             // Added username
-  mobileNumber: String,          // Added mobile number
+  username: String,
+  mobileNumber: String,
   addedAt: { type: Date, default: Date.now },
 });
-
-// Define Models
-
 const Dsale = mongoose.model("Dsale", dsaleSchema, "dsale");
 
+// Create API Router
+const apiRouter = express.Router();
 
-// API Routes
+// ============================================
+// API Routes (under /api prefix)
+// ============================================
 
-
-
-//const barcodeSchema = new mongoose.Schema({}, { strict: false });
-//const Barcode = mongoose.model("Barcode", barcodeSchema);
-
-app.get("/api/barcodes", async (req, res) => {
+// Barcodes
+apiRouter.get("/barcodes", async (req, res) => {
   try {
     const barcodes = await Barcode.find();
     res.json(barcodes);
@@ -160,8 +125,18 @@ app.get("/api/barcodes", async (req, res) => {
   }
 });
 
-// Godown API
-app.get('/api/godowns', async (req, res) => {
+apiRouter.post("/saved", async (req, res) => {
+  try {
+    const newBarcode = new Barcode(req.body);
+    await newBarcode.save();
+    res.json({ message: "Data saved successfully!" });
+  } catch (error) {
+    res.status(500).json({ message: "Error saving data", error });
+  }
+});
+
+// Godown
+apiRouter.get('/godowns', async (req, res) => {
   try {
     const godowns = await Godown.find();
     res.json(godowns);
@@ -170,7 +145,7 @@ app.get('/api/godowns', async (req, res) => {
   }
 });
 
-app.post('/api/godowns', async (req, res) => {
+apiRouter.post('/godowns', async (req, res) => {
   try {
     const { name, address, email, password, city, state } = req.body;
     const godown = new Godown({ name, address, email, password, city, state });
@@ -184,8 +159,7 @@ app.post('/api/godowns', async (req, res) => {
   }
 });
 
-// Add PUT endpoint for editing godown
-app.put('/api/godowns/:id', async (req, res) => {
+apiRouter.put('/godowns/:id', async (req, res) => {
   try {
     const { name, address, email, password, city, state } = req.body;
     const updatedGodown = await Godown.findByIdAndUpdate(
@@ -203,7 +177,7 @@ app.put('/api/godowns/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/godowns/:id', async (req, res) => {
+apiRouter.delete('/godowns/:id', async (req, res) => {
   try {
     const godown = await Godown.findByIdAndDelete(req.params.id);
     if (!godown) return res.status(404).json({ message: 'Godown not found' });
@@ -213,10 +187,8 @@ app.delete('/api/godowns/:id', async (req, res) => {
   }
 });
 
-// Godown Inventory API Endpoints are now in billingRoutes.js
-
-// Item API
-app.get('/api/items/:godownId', async (req, res) => {
+// Items
+apiRouter.get('/items/:godownId', async (req, res) => {
   try {
     const items = await Item.find({ godownId: req.params.godownId });
     res.json(items);
@@ -225,7 +197,7 @@ app.get('/api/items/:godownId', async (req, res) => {
   }
 });
 
-app.post('/api/items', async (req, res) => {
+apiRouter.post('/items', async (req, res) => {
   try {
     const { godownId, name } = req.body;
     const item = new Item({ godownId, name });
@@ -236,13 +208,11 @@ app.post('/api/items', async (req, res) => {
   }
 });
 
-// Delivery Items API
-app.post('/api/checkAndAddItem', async (req, res) => {
+// Delivery Items
+apiRouter.post('/checkAndAddItem', async (req, res) => {
   const { input, godownName } = req.body;
-
   try {
     const item = await Item.findOne({ name: input });
-
     if (item) {
       const newDeliveryItem = new DeliveryItem({ name: input, godown: godownName });
       await newDeliveryItem.save();
@@ -256,20 +226,16 @@ app.post('/api/checkAndAddItem', async (req, res) => {
   }
 });
 
-app.get('/api/getDeliveryItems', async (req, res) => {
+apiRouter.get('/getDeliveryItems', async (req, res) => {
   const godownName = req.query.godown;
-
   if (!godownName) {
     return res.status(400).json({ success: false, message: 'Godown name is required.' });
   }
-
   try {
     const deliveryItems = await DeliveryItem.find({ godown: godownName });
-
     if (deliveryItems.length === 0) {
       return res.json({ success: false, message: 'No delivery items found for this godown.' });
     }
-
     res.json({ success: true, data: deliveryItems });
   } catch (error) {
     console.error('Error fetching delivery items:', error);
@@ -277,13 +243,59 @@ app.get('/api/getDeliveryItems', async (req, res) => {
   }
 });
 
-// User Authentication API
-app.post('/api/auth/signup', async (req, res) => {
+apiRouter.get('/deliveryItems', async (req, res) => {
+  try {
+    const items = await DeliveryItem.find();
+    res.status(200).json(items);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching delivery items' });
+  }
+});
+
+apiRouter.delete('/deliveryItems/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await DeliveryItem.findByIdAndDelete(id);
+    res.status(200).json({ message: 'Item deleted from delivery items' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error deleting item from delivery items' });
+  }
+});
+
+// Sales
+apiRouter.post('/sales', async (req, res) => {
+  const { name, userName, mobileNumber, godown } = req.body;
+  try {
+    const matchingItem = await DeliveryItem.findOne({ name: name.trim() });
+    if (!matchingItem) {
+      return res.status(400).json({ error: 'Item name does not exist in delivery items.' });
+    }
+    const sale = new Sale({ name, userName, mobileNumber, godown });
+    await sale.save();
+    await DeliveryItem.findByIdAndDelete(matchingItem._id);
+    res.status(201).json(sale);
+  } catch (error) {
+    res.status(500).json({ error: 'Error processing the sale' });
+  }
+});
+
+apiRouter.get('/sales', async (req, res) => {
+  try {
+    const salesData = await Sale.aggregate([
+      { $group: { _id: "$godown", sales: { $push: "$$ROOT" } } }
+    ]);
+    res.status(200).json(salesData);
+  } catch (error) {
+    res.status(500).json({ error: 'Error fetching sales data' });
+  }
+});
+
+// Authentication
+apiRouter.post('/auth/signup', async (req, res) => {
   const { username, email, password } = req.body;
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ message: 'User already exists' });
-
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ username, email, password: hashedPassword });
     await newUser.save();
@@ -293,15 +305,13 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 });
 
-app.post('/api/auth/login', async (req, res) => {
+apiRouter.post('/auth/login', async (req, res) => {
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: 'Invalid credentials' });
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
-
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.json({ token });
   } catch (error) {
@@ -309,17 +319,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Admin Login Route
-app.post('/loginadmin', (req, res) => {
-  const { username, password } = req.body;
-  if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
-    return res.json({ success: true });
-  }
-  return res.json({ success: false });
-});
-
-// Godown Login Validation
-app.post('/api/login', async (req, res) => {
+apiRouter.post('/login', async (req, res) => {
   const { name, address } = req.body;
   try {
     const godown = await Godown.findOne({ name, address });
@@ -333,8 +333,7 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Godown Login with Email and Password
-app.post('/api/godown-login', async (req, res) => {
+apiRouter.post('/godown-login', async (req, res) => {
   const { email, password } = req.body;
   try {
     const godown = await Godown.findOne({ email, password });
@@ -359,8 +358,8 @@ app.post('/api/godown-login', async (req, res) => {
   }
 });
 
-// User List API
-app.get('/api/users', async (req, res) => {
+// Users
+apiRouter.get('/users', async (req, res) => {
   try {
     const users = await User.find();
     res.json(users);
@@ -369,8 +368,7 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// User Deletion API
-app.delete('/api/users/:id', async (req, res) => {
+apiRouter.delete('/users/:id', async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) {
@@ -382,128 +380,17 @@ app.delete('/api/users/:id', async (req, res) => {
   }
 });
 
-// Get all delivery items
-app.get('/api/deliveryItems', async (req, res) => {
+// Products
+apiRouter.get("/products", async (req, res) => {
   try {
-    const items = await DeliveryItem.find();
-    res.status(200).json(items);
-  } catch (error) {
-    res.status(500).json({ error: 'Error fetching delivery items' });
-  }
-});
-
-// Add item to sales if it matches deliveryItems
-app.post('/api/sales', async (req, res) => {
-  const { name, userName, mobileNumber, godown } = req.body;
-
-  try {
-    // Check if the item exists in the deliveryItems collection
-    const matchingItem = await DeliveryItem.findOne({ name: name.trim() });
-
-    if (!matchingItem) {
-      return res.status(400).json({ error: 'Item name does not exist in delivery items.' });
-    }
-
-    // Add the item to the sales collection
-    const sale = new Sale({ name, userName, mobileNumber, godown });
-    await sale.save();
-
-    // Delete the item from the deliveryItems collection
-    await DeliveryItem.findByIdAndDelete(matchingItem._id);
-
-    res.status(201).json(sale);
-  } catch (error) {
-    res.status(500).json({ error: 'Error processing the sale' });
-  }
-});
-
-// Delete item from delivery items
-app.delete('/api/deliveryItems/:id', async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    await DeliveryItem.findByIdAndDelete(id);
-    res.status(200).json({ message: 'Item deleted from delivery items' });
-  } catch (error) {
-    res.status(500).json({ error: 'Error deleting item from delivery items' });
-  }
-});
-
-// Get all sales grouped by godown
-app.get('/api/sales', async (req, res) => {
-  try {
-    const salesData = await Sale.aggregate([
-      { $group: { _id: "$godown", sales: { $push: "$$ROOT" } } }
-    ]);
-    res.status(200).json(salesData);
-  } catch (error) {
-    res.status(500).json({ error: 'Error fetching sales data' });
-  }
-});
-
-
-
-
-// Routes
-
-// Get All Data from 'datas' collection
-app.get('/selects', async (req, res) => {
-  try {
-      const data = await Select.find();
-      res.json(data);
-  } catch (err) {
-      res.status(500).send("Error fetching data");
-  }
-});
-
-
-// API to fetch unique products for dropdown
-app.get("/api/products", async (req, res) => {
-  try {
-    const products = await Barcode.distinct("product"); // Unique products only
+    const products = await Barcode.distinct("product");
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: "Error fetching products" });
   }
 });
 
-// API to save input field data in 'select' collection
-app.post("/api/save", async (req, res) => {
-  try {
-    const { inputValue } = req.body;
-    if (!inputValue) {
-      return res.status(400).json({ message: "Input value is required" });
-    }
-
-    const newEntry = new Select({ inputValue });
-    await newEntry.save();
-
-    res.json({ message: "Data saved successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Error saving data" });
-  }
-});
-
-// API to save only input value (for SelectForm) - now same as /api/save
-app.post("/api/save-input", async (req, res) => {
-  try {
-    const { inputValue } = req.body;
-    if (!inputValue) {
-      return res.status(400).json({ message: "Input value is required" });
-    }
-
-    const newEntry = new Select({ inputValue });
-    await newEntry.save();
-
-    res.json({ message: "Data saved successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Error saving data" });
-  }
-});
-
-
-// API: Get All Select Options
-app.get("/api/products1", async (req, res) => {
+apiRouter.get("/products1", async (req, res) => {
   try {
     const products = await Select.find();
     res.json(products);
@@ -512,47 +399,7 @@ app.get("/api/products1", async (req, res) => {
   }
 });
 
-// API: Add Data After Checking Match & Delete from `selects`
-app.post("/api/save/select", async (req, res) => {
-  const { inputValue, godownName } = req.body;
-
-  try {
-    const existingData = await Select.findOne({ inputValue });
-
-    if (!existingData) {
-      return res.status(400).json({ message: "No matching data found in selects" });
-    }
-
-    // Save to `despatch` collection with godown name
-    const newDespatch = new Despatch({ selectedOption: "default", inputValue, godownName });
-    await newDespatch.save();
-
-    // Delete from `selects` collection after adding
-    await Select.deleteOne({ _id: existingData._id });
-
-    res.json({ message: "Data saved in despatch and deleted from selects" });
-  } catch (error) {
-    res.status(500).json({ message: "Error saving data", error });
-  }
-});
-
-
-// API to save data
-app.post("/api/saved", async (req, res) => {
-  try {
-    const newBarcode = new Barcode(req.body);
-    await newBarcode.save();
-    res.json({ message: "Data saved successfully!" });
-  } catch (error) {
-    res.status(500).json({ message: "Error saving data", error });
-  }
-});
-
-
-
-
-// API: Get All Despatch Options
-app.get("/api/products2", async (req, res) => {
+apiRouter.get("/products2", async (req, res) => {
   try {
     const products = await Despatch.find();
     res.json(products);
@@ -561,71 +408,108 @@ app.get("/api/products2", async (req, res) => {
   }
 });
 
-// API: Add Data After Checking Match & Delete from `despatch`
-app.post("/api/save/despatch", async (req, res) => {
-  const { selectedOption, inputValue, godownName } = req.body;
-
+apiRouter.get("/products3", async (req, res) => {
   try {
-    const existingData = await Despatch.findOne({ selectedOption, inputValue });
-
-    if (!existingData) {
-      return res.status(400).json({ message: "No matching data found in despatch" });
-    }
-
-    // Save to `delevery1` collection with godown name
-    const newDelevery1 = new Delevery1({ selectedOption, inputValue, godownName });
-    await newDelevery1.save();
-
-    // Delete from `despatch` collection after adding
-    await Despatch.deleteOne({ _id: existingData._id });
-
-    res.json({ message: "Data saved in delevery1 and deleted from despatch" });
-  } catch (error) {
-    res.status(500).json({ message: "Error saving data", error });
-  }
-});
-
-
-// API Route to get data
-app.get('/api/despatch', async (req, res) => {
-  try {
-      const data = await Despatch.find({});
-      console.log("Data Fetched: ", data);  // Debugging: Check data in console
-      res.json(data);
-  } catch (err) {
-      console.error('Error fetching data:', err);
-      res.status(500).json({ error: 'Failed to fetch data' });
-  }
-});
-
-
-// API to fetch data from delevery1 Collection
-app.get("/api/delevery1", async (req, res) => {
-  try {
-    const data = await Delevery1.find();
-    res.json(data);
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    res.status(500).json({ message: "Error fetching data" });
-  }
-});
-
-
-// API: Get All Data from `delevery1`
-app.get("/api/products3", async (req, res) => {
-  try {
-    const products = await Delevery1.find(); // Fetching from `delevery1`
+    const products = await Delevery1.find();
     res.json(products);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch data" });
   }
 });
 
-// API: Add Data to `delevery1`
-app.post("/api/add/delevery1", async (req, res) => {
-  const { selectedOption, inputValue, godownName, username, mobileNumber } = req.body;
-  console.log("Request Body:", req.body); // Debugging line
+// Save Operations
+apiRouter.post("/save", async (req, res) => {
+  try {
+    const { inputValue } = req.body;
+    if (!inputValue) {
+      return res.status(400).json({ message: "Input value is required" });
+    }
+    const newEntry = new Select({ inputValue });
+    await newEntry.save();
+    res.json({ message: "Data saved successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error saving data" });
+  }
+});
 
+apiRouter.post("/save-input", async (req, res) => {
+  try {
+    const { inputValue } = req.body;
+    if (!inputValue) {
+      return res.status(400).json({ message: "Input value is required" });
+    }
+    const newEntry = new Select({ inputValue });
+    await newEntry.save();
+    res.json({ message: "Data saved successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error saving data" });
+  }
+});
+
+apiRouter.post("/save-multiple", async (req, res) => {
+  try {
+    const { selectedOption, values } = req.body;
+    if (!selectedOption || !Array.isArray(values) || values.length === 0) {
+      return res.status(400).json({ message: "Product and values are required" });
+    }
+    const entries = values.map(inputValue => ({ selectedOption, inputValue }));
+    await Select.insertMany(entries);
+    res.json({ message: "All values saved successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error saving values", error });
+  }
+});
+
+apiRouter.post("/save/select", async (req, res) => {
+  const { inputValue, godownName } = req.body;
+  try {
+    const existingData = await Select.findOne({ inputValue });
+    if (!existingData) {
+      return res.status(400).json({ message: "No matching data found in selects" });
+    }
+    const newDespatch = new Despatch({ selectedOption: "default", inputValue, godownName });
+    await newDespatch.save();
+    await Select.deleteOne({ _id: existingData._id });
+    res.json({ message: "Data saved in despatch and deleted from selects" });
+  } catch (error) {
+    res.status(500).json({ message: "Error saving data", error });
+  }
+});
+
+apiRouter.post("/save/despatch", async (req, res) => {
+  const { selectedOption, inputValue, godownName } = req.body;
+  try {
+    const existingData = await Despatch.findOne({ selectedOption, inputValue });
+    if (!existingData) {
+      return res.status(400).json({ message: "No matching data found in despatch" });
+    }
+    const newDelevery1 = new Delevery1({ selectedOption, inputValue, godownName });
+    await newDelevery1.save();
+    await Despatch.deleteOne({ _id: existingData._id });
+    res.json({ message: "Data saved in delevery1 and deleted from despatch" });
+  } catch (error) {
+    res.status(500).json({ message: "Error saving data", error });
+  }
+});
+
+apiRouter.post("/save/delevery1", async (req, res) => {
+  const { selectedOption, inputValue, godownName, username, mobileNumber } = req.body;
+  try {
+    const existingData = await Delevery1.findOne({ selectedOption, inputValue });
+    if (!existingData) {
+      return res.status(400).json({ message: "No matching data found in delevery1" });
+    }
+    const newDsale = new Dsale({ selectedOption, inputValue, godownName, username, mobileNumber });
+    await newDsale.save();
+    await Delevery1.deleteOne({ _id: existingData._id });
+    res.json({ message: "Data saved in dsale and deleted from delevery1" });
+  } catch (error) {
+    res.status(500).json({ message: "Error saving data", error });
+  }
+});
+
+apiRouter.post("/add/delevery1", async (req, res) => {
+  const { selectedOption, inputValue, godownName, username, mobileNumber } = req.body;
   try {
     const newDelevery1 = new Delevery1({ selectedOption, inputValue, godownName, username, mobileNumber });
     await newDelevery1.save();
@@ -635,33 +519,29 @@ app.post("/api/add/delevery1", async (req, res) => {
   }
 });
 
-// API: Add Data After Checking Match & Delete from `delevery1`
-app.post("/api/save/delevery1", async (req, res) => {
-  const { selectedOption, inputValue, godownName, username, mobileNumber } = req.body;
-
+// Despatch & Delivery
+apiRouter.get('/despatch', async (req, res) => {
   try {
-    // Check if matching data exists in `delevery1`
-    const existingData = await Delevery1.findOne({ selectedOption, inputValue });
-
-    if (!existingData) {
-      return res.status(400).json({ message: "No matching data found in delevery1" });
-    }
-
-    // Save to `dsale` collection with godown name, username, and mobile number
-    const newDsale = new Dsale({ selectedOption, inputValue, godownName, username, mobileNumber });
-    await newDsale.save();
-
-    // Delete from `delevery1` collection after adding to `dsale`
-    await Delevery1.deleteOne({ _id: existingData._id });
-
-    res.json({ message: "Data saved in dsale and deleted from delevery1" });
-  } catch (error) {
-    res.status(500).json({ message: "Error saving data", error });
+    const data = await Despatch.find({});
+    res.json(data);
+  } catch (err) {
+    console.error('Error fetching data:', err);
+    res.status(500).json({ error: 'Failed to fetch data' });
   }
 });
 
-// Get all data
-app.get('/api/data', async (req, res) => {
+apiRouter.get("/delevery1", async (req, res) => {
+  try {
+    const data = await Delevery1.find();
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    res.status(500).json({ message: "Error fetching data" });
+  }
+});
+
+// Data
+apiRouter.get('/data', async (req, res) => {
   try {
     const data = await Dsale.find();
     res.json(data);
@@ -670,24 +550,36 @@ app.get('/api/data', async (req, res) => {
   }
 });
 
-// API to save multiple select + input field data in 'select' collection
-app.post("/api/save-multiple", async (req, res) => {
+// Admin Login (add to apiRouter)
+apiRouter.post('/loginadmin', (req, res) => {
+  const { username, password } = req.body;
+  if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+    return res.json({ success: true });
+  }
+  return res.json({ success: false });
+});
+
+// Selects (add to apiRouter)
+apiRouter.get('/selects', async (req, res) => {
   try {
-    const { selectedOption, values } = req.body;
-    if (!selectedOption || !Array.isArray(values) || values.length === 0) {
-      return res.status(400).json({ message: "Product and values are required" });
-    }
-    // Save all values
-    const entries = values.map(inputValue => ({ selectedOption, inputValue }));
-    await Select.insertMany(entries);
-    res.json({ message: "All values saved successfully" });
-  } catch (error) {
-    res.status(500).json({ message: "Error saving values", error });
+    const data = await Select.find();
+    res.json(data);
+  } catch (err) {
+    res.status(500).send("Error fetching data");
   }
 });
 
+// Mount API router with /api prefix
+app.use('/api', apiRouter);
+
+// Mount additional route files
 app.use('/api', excelRoutes);
 app.use('/api', billingRoutes);
+
+// Health check endpoint
+app.get('/', (req, res) => {
+  res.json({ message: 'Inventory Management API', status: 'running' });
+});
 
 // Start Server
 app.listen(PORT, () => {
