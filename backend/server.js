@@ -7,7 +7,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 
 const Godown = require('./models/Godowns');
 const GodownInventory = require('./models/GodownInventory');
@@ -121,6 +121,19 @@ app.get('/', (req, res) => {
     message: 'Inventory Management API', 
     status: 'running'
   });
+});
+
+// Health check route
+app.get('/api/health', async (req, res) => {
+  const state = mongoose.connection.readyState; 
+  // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
+  let status = '';
+  if (state === 1) status = '✅ MongoDB Connected';
+  else if (state === 2) status = '⏳ Connecting to MongoDB';
+  else if (state === 3) status = '⚠️ Disconnecting from MongoDB';
+  else status = '❌ MongoDB Not Connected';
+
+  res.json({ dbStatus: status, state });
 });
 
 // API health check
