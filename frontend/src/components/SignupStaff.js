@@ -19,7 +19,7 @@ const SignupStaff = () => {
 
     const fetchUsers = async () => {
         try {
-            const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/users`);
+            const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/users`);
             setUsers(response.data);
         } catch (err) {
             console.error("Error fetching users", err);
@@ -30,7 +30,7 @@ const SignupStaff = () => {
         e.preventDefault();
 
         try {
-            await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/auth/signup`, {
+            await axios.post(`${process.env.REACT_APP_BACKEND_URL}/auth/signup`, {
                 username,
                 email,
                 password,
@@ -44,7 +44,7 @@ const SignupStaff = () => {
 
     const handleDelete = async (userId) => {
         try {
-            await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/users/${userId}`);
+            await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/users/${userId}`);
             alert('User deleted');
             fetchUsers();
         } catch (err) {
@@ -236,3 +236,4 @@ const SignupStaff = () => {
 };
 
 export default SignupStaff;
+
